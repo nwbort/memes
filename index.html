@@ -107,6 +107,24 @@
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    .card .people {
+      padding: 0 0.75rem 0.6rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .person-tag {
+      font-size: 0.72rem;
+      background: #2a2a2a;
+      color: #888;
+      border-radius: 999px;
+      padding: 0.15rem 0.55rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .person-tag:hover { background: #3a3a3a; color: #ccc; }
+
     .no-results {
       grid-column: 1 / -1;
       text-align: center;
@@ -171,10 +189,11 @@ async function copyImage(src, btn) {
 
 function buildCards() {
   grid.innerHTML = '';
-  memes.forEach(({ n, text, img: src }) => {
+  memes.forEach(({ n, text, img: src, people }) => {
     const card = document.createElement('div');
     card.className = 'card';
     card.dataset.text = text.toLowerCase();
+    card.dataset.people = (people || []).join(',').toLowerCase();
 
     const img = document.createElement('img');
     img.src = src;
@@ -191,7 +210,26 @@ function buildCards() {
 
     card.addEventListener('click', () => copyImage(src, btn));
 
-    card.append(img, caption, btn);
+    card.append(img, caption);
+
+    if (people && people.length) {
+      const peopleEl = document.createElement('div');
+      peopleEl.className = 'people';
+      people.forEach(name => {
+        const tag = document.createElement('span');
+        tag.className = 'person-tag';
+        tag.textContent = name;
+        tag.addEventListener('click', (e) => {
+          e.stopPropagation();
+          search.value = name;
+          updateGrid();
+        });
+        peopleEl.appendChild(tag);
+      });
+      card.appendChild(peopleEl);
+    }
+
+    card.appendChild(btn);
     grid.appendChild(card);
   });
   updateGrid();
@@ -202,7 +240,7 @@ function updateGrid() {
   const cards = grid.querySelectorAll('.card');
   let visible = 0;
   cards.forEach(card => {
-    const match = !q || card.dataset.text.includes(q);
+    const match = !q || card.dataset.text.includes(q) || card.dataset.people.includes(q);
     card.classList.toggle('hidden', !match);
     if (match) visible++;
   });
