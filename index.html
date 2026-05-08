@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meme Gallery</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #111;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #222;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    header h1 { font-size: 1.1rem; color: #aaa; white-space: nowrap; }
+
+    #search {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      border: 1px solid #333;
+      background: #1e1e1e;
+      color: #eee;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #search:focus { border-color: #555; }
+
+    #count { font-size: 0.85rem; color: #666; white-space: nowrap; }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem;
+    }
+
+    .card {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1a1a1a;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .card.hidden { display: none; }
+
+    .card img { width: 100%; display: block; }
+
+    .card .caption {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.85rem;
+      color: #bbb;
+      line-height: 1.4;
+      min-height: 2.5rem;
+      white-space: pre-line;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(0,0,0,0.65);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .card:hover .copy-btn { opacity: 1; }
+    .copy-btn:hover { background: rgba(255,255,255,0.2); }
+    .copy-btn.copied { background: #2a7a2a; opacity: 1; }
+
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(2rem);
+      background: #222;
+      color: #eee;
+      padding: 0.6rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      border: 1px solid #333;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #555;
+      padding: 4rem;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Memes</h1>
+  <input id="search" type="search" placeholder="Search meme text…" autofocus>
+  <span id="count"></span>
+</header>
+
+<div id="grid"></div>
+<div id="toast"></div>
+
+<script>
+const grid = document.getElementById('grid');
+const search = document.getElementById('search');
+const countEl = document.getElementById('count');
+const toast = document.getElementById('toast');
+let toastTimer;
+let memes = [];
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+async function copyImage(src, btn) {
+  try {
+    const res = await fetch(src);
+    const blob = await res.blob();
+    const img = new Image();
+    img.src = URL.createObjectURL(blob);
+    await new Promise(r => img.onload = r);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    canvas.toBlob(async (pngBlob) => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+        showToast('Image copied to clipboard');
+      } catch {
+        showToast('Copy failed — try right-clicking the image');
+      }
+    }, 'image/png');
+  } catch {
+    showToast('Copy failed — try right-clicking the image');
+  }
+}
+
+function buildCards() {
+  grid.innerHTML = '';
+  memes.forEach(({ n, text }) => {
+    const src = `meme${n}.jpg`;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.text = text.toLowerCase();
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = text || `Meme ${n}`;
+    img.loading = 'lazy';
+
+    const caption = document.createElement('div');
+    caption.className = 'caption';
+    caption.textContent = text;
+
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyImage(src, btn);
+    });
+
+    card.append(img, caption, btn);
+    grid.appendChild(card);
+  });
+  updateGrid();
+}
+
+function updateGrid() {
+  const q = search.value.trim().toLowerCase();
+  const cards = grid.querySelectorAll('.card');
+  let visible = 0;
+  cards.forEach(card => {
+    const match = !q || card.dataset.text.includes(q);
+    card.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+
+  const existing = grid.querySelector('.no-results');
+  if (existing) existing.remove();
+
+  countEl.textContent = q ? `${visible} of ${memes.length}` : `${memes.length} memes`;
+
+  if (visible === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'no-results';
+    msg.textContent = `No memes match "${search.value}"`;
+    grid.appendChild(msg);
+  }
+}
+
+search.addEventListener('input', updateGrid);
+
+fetch('memes.json')
+  .then(r => r.json())
+  .then(data => { memes = data; buildCards(); })
+  .catch(() => { grid.innerHTML = '<div class="no-results">Failed to load memes.json</div>'; });
+</script>
+</body>
+</html>
