@@ -240,7 +240,8 @@ function updateGrid() {
   const cards = grid.querySelectorAll('.card');
   let visible = 0;
   cards.forEach(card => {
-    const match = !q || card.dataset.text.includes(q) || card.dataset.people.includes(q);
+    const words = q.split(/\s+/).filter(Boolean);
+    const match = !q || words.every(w => card.dataset.text.includes(w) || card.dataset.people.includes(w));
     card.classList.toggle('hidden', !match);
     if (match) visible++;
   });
