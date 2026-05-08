@@ -63,15 +63,6 @@
 
     .card img { width: 100%; display: block; }
 
-    .card .caption {
-      padding: 0.6rem 0.75rem;
-      font-size: 0.85rem;
-      color: #bbb;
-      line-height: 1.4;
-      min-height: 2.5rem;
-      white-space: pre-line;
-    }
-
     .copy-btn {
       position: absolute;
       top: 0.5rem;
@@ -200,17 +191,13 @@ function buildCards() {
     img.alt = text || `Meme ${n}`;
     img.loading = 'lazy';
 
-    const caption = document.createElement('div');
-    caption.className = 'caption';
-    caption.textContent = text;
-
     const btn = document.createElement('button');
     btn.className = 'copy-btn';
     btn.textContent = 'Copy';
 
     card.addEventListener('click', () => copyImage(src, btn));
 
-    card.append(img, caption);
+    card.append(img);
 
     if (people && people.length) {
       const peopleEl = document.createElement('div');
