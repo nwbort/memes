@@ -171,8 +171,7 @@ async function copyImage(src, btn) {
 
 function buildCards() {
   grid.innerHTML = '';
-  memes.forEach(({ n, text, img }) => {
-    const src = img;
+  memes.forEach(({ n, text, img: src }) => {
     const card = document.createElement('div');
     card.className = 'card';
     card.dataset.text = text.toLowerCase();
