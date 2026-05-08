@@ -250,7 +250,10 @@ search.addEventListener('input', updateGrid);
 
 fetch('memes.json')
   .then(r => r.json())
-  .then(data => { memes = data; buildCards(); })
+  .then(data => {
+    memes = data.sort(() => Math.random() - 0.5);
+    buildCards();
+  })
   .catch(() => { grid.innerHTML = '<div class="no-results">Failed to load memes.json</div>'; });
 </script>
 </body>
