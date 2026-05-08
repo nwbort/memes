@@ -55,6 +55,7 @@
       border-radius: 8px;
       overflow: hidden;
       background: #1a1a1a;
+      cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
     }
     .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
@@ -188,10 +189,8 @@ function buildCards() {
     const btn = document.createElement('button');
     btn.className = 'copy-btn';
     btn.textContent = 'Copy';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      copyImage(src, btn);
-    });
+
+    card.addEventListener('click', () => copyImage(src, btn));
 
     card.append(img, caption, btn);
     grid.appendChild(card);
