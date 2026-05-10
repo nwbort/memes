@@ -179,6 +179,16 @@ async function copyImage(src, btn) {
   }
 }
 
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const img = entry.target;
+      img.src = img.dataset.src;
+      observer.unobserve(img);
+    }
+  });
+}, { rootMargin: '200px' });
+
 function buildCards() {
   grid.innerHTML = '';
   memes.forEach(({ n, text, img: src, people }) => {
@@ -188,9 +198,9 @@ function buildCards() {
     card.dataset.people = (people || []).join(',').toLowerCase();
 
     const img = document.createElement('img');
-    img.src = src;
+    img.dataset.src = src;
     img.alt = text || `Meme ${n}`;
-    img.loading = 'lazy';
+    observer.observe(img);
 
     const btn = document.createElement('button');
     btn.className = 'copy-btn';
